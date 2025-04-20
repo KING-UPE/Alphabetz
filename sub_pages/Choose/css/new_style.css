@@ -1,0 +1,12 @@
+body{
+    max-height: 100vh;
+  }
+  
+
+.h1{
+    padding-top: 90px;
+    margin-bottom: -20px;
+    text-align: center;
+    font-size: 25px;
+    color: #fff
+}
