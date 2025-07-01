@@ -1,0 +1,1878 @@
+import React, { useState, useEffect, createContext, useContext } from 'react';
+
+// --- Global Tailwind CSS for form inputs (moved here for easier management) ---
+// Note: In a real project, these would typically be in a CSS file or a Tailwind config.
+const formInputClasses = "shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-blue-500 focus:border-blue-500";
+
+// --- Language Context ---
+const LanguageContext = createContext();
+
+// --- Auth Context ---
+const AuthContext = createContext();
+
+// Auth Provider Component
+const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null); // { id, username, token }
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Check for stored token on initial load
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+        setLoading(false);
+    }, []);
+
+    const login = async (username, password) => {
+        // Simulate API call to backend for login
+        setLoading(true);
+        try {
+            // In a real app, you'd fetch from your Node.js/Express backend:
+            // const response = await fetch('/api/auth/login', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ username, password })
+            // });
+            // const data = await response.json();
+
+            // Simulated response
+            const data = { success: true, user: { id: 'user_' + username, username: username, token: 'fake-jwt-token-' + username } };
+
+            if (data.success) {
+                const loggedInUser = data.user;
+                setUser(loggedInUser);
+                localStorage.setItem('currentUser', JSON.stringify(loggedInUser));
+                return { success: true };
+            } else {
+                return { success: false, message: data.message || 'Login failed' };
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            return { success: false, message: 'Network error or server issue' };
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const register = async (username, password) => {
+        // Simulate API call to backend for registration
+        setLoading(true);
+        try {
+            // In a real app, you'd fetch from your Node.js/Express backend:
+            // const response = await fetch('/api/auth/register', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ username, password })
+            // });
+            // const data = await response.json();
+
+            // Simulated response
+            const data = { success: true, user: { id: 'user_' + username, username: username, token: 'fake-jwt-token-' + username } };
+
+            if (data.success) {
+                const registeredUser = data.user;
+                setUser(registeredUser);
+                localStorage.setItem('currentUser', JSON.stringify(registeredUser));
+                return { success: true };
+            } else {
+                return { success: false, message: data.message || 'Registration failed' };
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            return { success: false, message: 'Network error or server issue' };
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const logout = () => {
+        setUser(null);
+        localStorage.removeItem('currentUser');
+    };
+
+    return (
+        <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
+
+
+// --- Translations Data ---
+const translations = {
+    en: {
+        welcome: "Welcome to",
+        appName: "AlphabetZ",
+        tagline: "Learn English tenses or test your knowledge with our fun quiz. Choose your path below!",
+        learnTenses: "Learn Tenses",
+        takeAQuiz: "Take a Quiz",
+        chooseVoice: "Choose a Voice",
+        activeVoice: "Active Voice",
+        activeVoiceDesc: "The subject performs the action.",
+        passiveVoice: "Passive Voice",
+        passiveVoiceDesc: "The subject receives the action.",
+        back: "Back", // This is for the Back button
+        voiceTenses: "Voice Tenses",
+        rule: "RULE",
+        examples: "Examples:",
+        listen: "Listen",
+        chooseDifficulty: "Choose a Difficulty",
+        easy: "Easy",
+        easyDesc: "Basic tenses and simple sentences.",
+        medium: "Medium",
+        mediumDesc: "More complex tenses and structures.",
+        hard: "Hard",
+        hardDesc: "Challenging questions with mixed tenses.",
+        loadingQuiz: "Loading Quiz...",
+        question: "Question",
+        score: "Score",
+        nextQuestion: "Next Question",
+        finishQuiz: "Finish Quiz",
+        quizComplete: "Quiz Complete!",
+        yourScore: "Your Score:",
+        tryAgain: "Try Again",
+        goHome: "Go Home",
+        mistakeReview: "Mistake Review",
+        yourAnswer: "Your Answer:",
+        correctAnswer: "Correct Answer:",
+        perfectScore: "Perfect Score! You're a tenses master!",
+        greatJob: "Great job! You really know your tenses.",
+        goodTry: "Good try! A little more practice will help.",
+        keepPracticing: "Keep practicing! You'll get it.",
+        practiceMode: "Practice Mode",
+        tenseConverter: "Tense Converter",
+        timeline: "Timeline Visualization",
+        flashcards: "Flashcards",
+        dailyChallenge: "Daily Challenge",
+        adminPanel: "Admin Panel", // Keeping this key for now, but panel will be removed
+        inputSentence: "Input Sentence:",
+        originalTense: "Original Tense:",
+        targetTense: "Target Tense:",
+        convert: "Convert",
+        convertedSentence: "Converted Sentence:",
+        selectTense: "Select Tense",
+        selectVoice: "Select Voice",
+        active: "Active",
+        passive: "Passive",
+        fillInTheBlank: "Fill in the blank:",
+        checkAnswer: "Check Answer",
+        correct: "Correct!",
+        incorrect: "Incorrect. Try again.",
+        nextPractice: "Next Practice",
+        showAnswer: "Show Answer",
+        front: "Front:",
+        flashcardBack: "Back:", // Renamed from 'back' to 'flashcardBack'
+        flip: "Flip",
+        nextCard: "Next Card",
+        previousCard: "PreviousCard",
+        dailyChallengeTitle: "Daily Tenses Challenge",
+        challengeComplete: "You've completed today's challenge!",
+        comeBackTomorrow: "Come back tomorrow for a new challenge!",
+        startChallenge: "Start Today's Challenge",
+        viewScores: "View Scores",
+        recentScores: "Recent Scores",
+        bestScore: "Best Score:",
+        noScoresYet: "No scores yet.",
+        adminPanelTitle: "Admin Panel", // Keeping this key for now, but panel will be removed
+        addQuizQuestion: "Add New Quiz Question",
+        questionText: "Question Text:",
+        options: "Options (comma-separated):",
+        correctOption: "Correct Option:",
+        difficulty: "Difficulty:",
+        addQuestion: "Add Question",
+        addTenseData: "Add/Edit Tense Data",
+        tenseName: "Tense Name:",
+        tenseRule: "Tense Rule:",
+        tenseExamples: "Examples (one per line):",
+        updateTense: "Update Tense",
+        selectLanguage: "Select Language:",
+        english: "English",
+        sinhala: "සිංහල", // Placeholder for Sinhala
+        explanation: "Explanation:",
+        selectOriginalTense: "Select Original Tense",
+        selectTargetTense: "Select Target Tense",
+        noConversionAvailable: "Conversion for this tense is not implemented yet or is too complex for a simple tool.",
+        sentenceRequired: "Please enter a sentence.",
+        selectOriginalAndTarget: "Please select both original and target tenses/voices.",
+        scoreTracker: "Score Tracker",
+        dashboard: "Dashboard",
+        timelineDescription: "Visualize how different tenses relate to each other on a timeline.",
+        flashcardsDescription: "Test your knowledge of tense rules with interactive flashcards.",
+        dailyChallengeDescription: "Take a quick daily quiz to keep your skills sharp.",
+        adminPanelDescription: "Manage quiz questions and tense data.",
+        practiceModeDescription: "Fill in the blanks to practice your tenses.",
+        tenseConverterDescription: "Convert sentences between different tenses.",
+        login: "Login",
+        logout: "Logout",
+        register: "Register",
+        username: "Username",
+        password: "Password",
+        notAMember: "Not a member?",
+        alreadyAMember: "Already a member?",
+        loginSuccess: "Login successful!",
+        registerSuccess: "Registration successful! You are now logged in.",
+        loginFailed: "Login failed. Please check your credentials.",
+        registerFailed: "Registration failed. Please try again.",
+        loggedInAs: "Logged in as",
+        leaderboard: "Leaderboard",
+        yourRank: "Your Rank:",
+        rank: "Rank",
+        usernameCol: "Username",
+        scoreCol: "Score",
+        noScoresForDifficulty: "No scores recorded for this difficulty yet.",
+        viewLeaderboard: "View Leaderboard",
+        quizResults: "Quiz Results",
+        placement: "Placement",
+        loading: "Loading...",
+    },
+    si: { // Placeholder for Sinhala translations
+        welcome: "සාදරයෙන් පිළිගනිමු",
+        appName: "ඇල්ෆබෙට්Z",
+        tagline: "ඉංග්‍රීසි කාලරූපී ඉගෙන ගන්න හෝ අපගේ විනෝදජනක ප්‍රශ්නාවලිය සමඟ ඔබේ දැනුම පරීක්ෂා කරන්න. පහතින් ඔබේ මාර්ගය තෝරන්න!",
+        learnTenses: "කාලරූපී ඉගෙන ගන්න",
+        takeAQuiz: "ප්‍රශ්නාවලියක් කරන්න",
+        chooseVoice: "හඬක් තෝරන්න",
+        activeVoice: "කර්තෘ කාරක",
+        activeVoiceDesc: "විෂය ක්‍රියාව සිදු කරයි.",
+        passiveVoice: "කර්ම කාරක",
+        passiveVoiceDesc: "විෂය ක්‍රියාව ලබා ගනී.",
+        back: "ආපසු", // This is for the Back button
+        voiceTenses: "කාලරූපී",
+        rule: "නීතිය",
+        examples: "උදාහරණ:",
+        listen: "අහන්න",
+        chooseDifficulty: "දුෂ්කරතාවයක් තෝරන්න",
+        easy: "පහසු",
+        easyDesc: "මූලික කාලරූපී සහ සරල වාක්‍ය.",
+        medium: "මධ්‍යම",
+        mediumDesc: "වඩාත් සංකීර්ණ කාලරූපී සහ ව්‍යුහයන්.",
+        hard: "අමාරු",
+        hardDesc: "මිශ්‍ර කාලරූපී සහිත අභියෝගාත්මක ප්‍රශ්න.",
+        loadingQuiz: "ප්‍රශ්නාවලිය පූරණය වෙමින් පවතී...",
+        question: "ප්‍රශ්නය",
+        score: "ලකුණු",
+        nextQuestion: "ඊළඟ ප්‍රශ්නය",
+        finishQuiz: "ප්‍රශ්නාවලිය අවසන් කරන්න",
+        quizComplete: "ප්‍රශ්නාවලිය අවසන්!",
+        yourScore: "ඔබේ ලකුණු:",
+        tryAgain: "නැවත උත්සාහ කරන්න",
+        goHome: "මුල් පිටුවට යන්න",
+        mistakeReview: "වැරදි සමාලෝචනය",
+        yourAnswer: "ඔබේ පිළිතුර:",
+        correctAnswer: "නිවැරදි පිළිතුර:",
+        perfectScore: "පරිපූර්ණ ලකුණු! ඔබ කාලරූපී ප්‍රවීණයෙකි!",
+        greatJob: "නියමයි! ඔබ ඔබේ කාලරූපී හොඳින් දන්නවා.",
+        goodTry: "හොඳ උත්සාහයක්! තව ටිකක් පුහුණුවීමෙන් උපකාරී වේවි.",
+        keepPracticing: "පුහුණුවීම දිගටම කරන්න! ඔබට එය ලැබෙනු ඇත.",
+        practiceMode: "පුහුණු මාදිලිය",
+        tenseConverter: "කාලරූපී පරිවර්තකය",
+        timeline: "කාලරූපී දෘශ්‍යකරණය",
+        flashcards: "ෆ්ලෑෂ් කාඩ්පත්",
+        dailyChallenge: "දෛනික අභියෝගය",
+        adminPanel: "පරිපාලක පැනලය", // Keeping this key for now, but panel will be removed
+        inputSentence: "වාක්‍ය ඇතුල් කරන්න:",
+        originalTense: "මුල් කාලරූපී:",
+        targetTense: "ඉලක්ක කාලරූපී:",
+        convert: "පරිවර්තනය කරන්න",
+        convertedSentence: "පරිවර්තනය කළ වාක්‍යය:",
+        selectTense: "කාලරූපී තෝරන්න",
+        selectVoice: "හඬ තෝරන්න",
+        active: "කර්තෘ",
+        passive: "කර්ම",
+        fillInTheBlank: "හිස්තැන පුරවන්න:",
+        checkAnswer: "පිළිතුර පරීක්ෂා කරන්න",
+        correct: "නිවැරදියි!",
+        incorrect: "වැරදියි. නැවත උත්සාහ කරන්න.",
+        nextPractice: "ඊළඟ පුහුණුව",
+        showAnswer: "පිළිතුර පෙන්වන්න",
+        front: "ඉදිරිපස:",
+        flashcardBack: "පසුපස:", // Renamed from 'back' to 'flashcardBack'
+        flip: "පෙරළන්න",
+        nextCard: "ඊළඟ කාඩ්පත",
+        previousCard: "පෙර කාඩ්පත",
+        dailyChallengeTitle: "දෛනික කාලරූපී අභියෝගය",
+        challengeComplete: "ඔබ අද අභියෝගය සම්පූර්ණ කර ඇත!",
+        comeBackTomorrow: "නව අභියෝගයක් සඳහා හෙට නැවත එන්න!",
+        startChallenge: "අද අභියෝගය ආරම්භ කරන්න",
+        viewScores: "ලකුණු බලන්න",
+        recentScores: "මෑත ලකුණු",
+        bestScore: "හොඳම ලකුණු:",
+        noScoresYet: "තවම ලකුණු නැත.",
+        adminPanelTitle: "පරිපාලක පැනලය", // Keeping this key for now, but panel will be removed
+        addQuizQuestion: "නව ප්‍රශ්නාවලිය ප්‍රශ්නයක් එක් කරන්න",
+        questionText: "ප්‍රශ්න පාඨය:",
+        options: "විකල්ප (කොමා වලින් වෙන් කරන්න):",
+        correctOption: "නිවැරදි විකල්පය:",
+        difficulty: "දුෂ්කරතාවය:",
+        addQuestion: "ප්‍රශ්නය එක් කරන්න",
+        addTenseData: "කාලරූපී දත්ත එක් කරන්න/සංස්කරණය කරන්න",
+        tenseName: "කාලරූපී නම:",
+        tenseRule: "කාලරූපී නීතිය:",
+        tenseExamples: "උදාහරණ (එක් පේළියකට එකක්):",
+        updateTense: "කාලරූපී යාවත්කාලීන කරන්න",
+        selectLanguage: "භාෂාව තෝරන්න:",
+        english: "ඉංග්‍රීසි",
+        sinhala: "සිංහල",
+        explanation: "විස්තරය:",
+        selectOriginalTense: "මුල් කාලරූපී තෝරන්න",
+        selectTargetTense: "ඉලක්ක කාලරූපී තෝරන්න",
+        noConversionAvailable: "මෙම කාලරූපී සඳහා පරිවර්තනය තවමත් ක්‍රියාත්මක කර නොමැත හෝ සරල මෙවලමක් සඳහා ඉතා සංකීර්ණ වේ.",
+        sentenceRequired: "කරුණාකර වාක්‍යයක් ඇතුල් කරන්න.",
+        selectOriginalAndTarget: "කරුණාකර මුල් සහ ඉලක්ක කාලරූපී/හඬ දෙකම තෝරන්න.",
+        scoreTracker: "ලකුණු ට්‍රැකර්",
+        dashboard: "උපකරණ පුවරුව",
+        timelineDescription: "කාලරූපී එකිනෙකට සම්බන්ධ වන ආකාරය කාලරේඛාවක දෘශ්‍යමාන කරන්න.",
+        flashcardsDescription: "අන්තර්ක්‍රියාකාරී ෆ්ලෑෂ් කාඩ්පත් සමඟ කාලරූපී නීති පිළිබඳ ඔබේ දැනුම පරීක්ෂා කරන්න.",
+        dailyChallengeDescription: "ඔබේ කුසලතා තියුණු කර ගැනීමට ඉක්මන් දෛනික ප්‍රශ්නාවලියක් ගන්න.",
+        adminPanelDescription: "ප්‍රශ්නාවලිය ප්‍රශ්න සහ කාලරූපී දත්ත කළමනාකරණය කරන්න.",
+        practiceModeDescription: "ඔබේ කාලරූපී පුහුණු වීමට හිස්තැන් පුරවන්න.",
+        tenseConverterDescription: "විවිධ කාලරූපී අතර වාක්‍ය පරිවර්තනය කරන්න.",
+        login: "පිවිසෙන්න",
+        logout: "පිටවෙන්න",
+        register: "ලියාපදිංචි වන්න",
+        username: "පරිශීලක නාමය",
+        password: "මුරපදය",
+        notAMember: "සාමාජිකයෙක් නොවේද?",
+        alreadyAMember: "දැනටමත් සාමාජිකයෙක්ද?",
+        loginSuccess: "සාර්ථකව පිවිසුණා!",
+        registerSuccess: "ලියාපදිංචිය සාර්ථකයි! ඔබ දැන් පිවිස ඇත.",
+        loginFailed: "පිවිසීම අසාර්ථක විය. කරුණාකර ඔබේ අක්තපත්‍ර පරීක්ෂා කරන්න.",
+        registerFailed: "ලියාපදිංචිය අසාර්ථක විය. කරුණාකර නැවත උත්සාහ කරන්න.",
+        loggedInAs: "ලොග් වී ඇත්තේ",
+        leaderboard: "නායක පුවරුව",
+        yourRank: "ඔබේ ශ්‍රේණිය:",
+        rank: "ශ්‍රේණිය",
+        usernameCol: "පරිශීලක නාමය",
+        scoreCol: "ලකුණු",
+        noScoresForDifficulty: "මෙම දුෂ්කරතාවය සඳහා ලකුණු වාර්තා කර නොමැත.",
+        viewLeaderboard: "නායක පුවරුව බලන්න",
+        quizResults: "ප්‍රශ්නාවලිය ප්‍රතිඵල",
+        placement: "ස්ථානගත කිරීම",
+        loading: "පූරණය වෙමින් පවතී...",
+    }
+};
+
+// --- Data for all tenses (initial data, can be modified by Admin Panel) ---
+const initialTensesData = {
+    active: [
+        { id: 1, name: 'Present Simple', rule: 'Subject + V1(s/es) + Object', examples: ['He reads a book.', 'She goes to school.', 'They play cricket.', 'The sun rises in the east.'] },
+        { id: 2, name: 'Present Continuous', rule: 'Subject + is/am/are + V1+ing + Object', examples: ['He is reading a book.', 'She is going to school.', 'They are playing cricket.', 'I am writing a letter.'] },
+        { id: 3, name: 'Present Perfect', rule: 'Subject + has/have + V3 + Object', examples: ['He has read a book.', 'She has gone to school.', 'They have played cricket.', 'I have finished my work.'] },
+        { id: 4, name: 'Present Perfect Continuous', rule: 'Subject + has/have + been + V1+ing + Object', examples: ['He has been reading a book for two hours.', 'She has been going to school since morning.', 'They have been playing cricket since 4 PM.', 'I have been writing for an hour.'] },
+        { id: 5, name: 'Past Simple', rule: 'Subject + V2 + Object', examples: ['He read a book.', 'She went to school.', 'They played cricket.', 'I wrote a letter yesterday.'] },
+        { id: 6, name: 'Past Continuous', rule: 'Subject + was/were + V1+ing + Object', examples: ['He was reading a book.', 'She was going to school.', 'They were playing cricket.', 'I was writing a letter.'] },
+        { id: 7, name: 'Past Perfect', rule: 'Subject + had + V3 + Object', examples: ['He had read a book.', 'She had gone to school.', 'The train had left before we arrived.', 'They had played cricket.'] },
+        { id: 8, name: 'Past Perfect Continuous', rule: 'Subject + had + been + V1+ing + Object', examples: ['He had been reading a book.', 'She had been going to school.', 'They had been playing cricket for two hours.', 'I had been waiting for you.'] },
+        { id: 9, name: 'Future Simple', rule: 'Subject + will/shall + V1 + Object', examples: ['He will read a book.', 'She will go to school.', 'They will play cricket.', 'We shall overcome.'] },
+        { id: 10, name: 'Future Continuous', rule: 'Subject + will/shall + be + V1+ing + Object', examples: ['He will be reading a book.', 'She will be going to school.', 'They will be playing cricket.', 'I will be waiting for you.'] },
+        { id: 11, name: 'Future Perfect', rule: 'Subject + will/shall + have + V3 + Object', examples: ['He will have read a book.', 'She will have gone to school by then.', 'They will have played cricket.', 'You will have finished your work.'] },
+        { id: 12, name: 'Future Perfect Continuous', rule: 'Subject + will/shall + have been + V1+ing + Object', examples: ['He will have been reading a book.', 'She will have been going to school.', 'They will have been playing cricket.', 'Next year, I will have been working here for five years.'] },
+    ],
+    passive: [
+        { id: 13, name: 'Present Simple', rule: 'Object + is/am/are + V3 + by + Subject', examples: ['A book is read by him.', 'School is gone to by her.', 'Cricket is played by them.', 'A letter is written by me.'] },
+        { id: 14, name: 'Present Continuous', rule: 'Object + is/am/are + being + V3 + by + Subject', examples: ['A book is being read by him.', 'School is being gone to by her.', 'Cricket is being played by them.', 'A letter is being written by me.'] },
+        { id: 15, name: 'Present Perfect', rule: 'Object + has/have + been + V3 + by + Subject', examples: ['A book has been read by him.', 'School has been gone to by her.', 'Cricket has been played by them.', 'My work has been finished by me.'] },
+        { id: 16, name: 'Past Simple', rule: 'Object + was/were + V3 + by + Subject', examples: ['A book was read by him.', 'School was gone to by her.', 'Cricket was played by them.', 'A letter was written by me yesterday.'] },
+        { id: 17, name: 'Past Continuous', rule: 'Object + was/were + being + V3 + by + Subject', examples: ['A book was being read by him.', 'School was being gone to by her.', 'Cricket was being played by them.', 'A letter was being written by me.'] },
+        { id: 18, name: 'Past Perfect', rule: 'Object + had + been + V3 + by + Subject', examples: ['A book had been read by him.', 'School had been gone to by her.', 'Cricket had been played by them.', 'The work had been finished.'] },
+        { id: 19, name: 'Future Simple', rule: 'Object + will/shall + be + V3 + by + Subject', examples: ['A book will be read by him.', 'School will be gone to by her.', 'Cricket will be played by them.', 'The work will be finished.'] },
+        { id: 20, name: 'Future Perfect', rule: 'Object + will/shall + have been + V3 + by + Subject', examples: ['A book will have been read by him.', 'School will have been gone to by her.', 'Cricket will have been played by them.', 'The work will have been finished by you.'] },
+    ]
+};
+
+// --- Initial Quiz Data (can be modified by Admin Panel) ---
+const initialQuizData = {
+    easy: [
+        { question: "I ___ apple.", options: ["eat", "eats", "am eating"], answer: "eat", explanation: "For 'I', use the base form of the verb in Present Simple." },
+        { question: "She ___ to the park yesterday.", options: ["go", "goes", "went"], answer: "went", explanation: "The word 'yesterday' indicates Past Simple tense." },
+        { question: "They ___ football tomorrow.", options: ["play", "will play", "played"], answer: "will play", explanation: "The word 'tomorrow' indicates Future Simple tense." },
+        { question: "He ___ a book now.", options: ["reads", "is reading", "read"], answer: "is reading", explanation: "The word 'now' indicates Present Continuous tense." },
+        { question: "We ___ happy.", options: ["is", "are", "am"], answer: "are", explanation: "For 'We', use 'are' with the verb 'to be'." },
+    ],
+    medium: [
+        { question: "While I was studying, my friends ___ television.", options: ["were watching", "watched", "watch"], answer: "were watching", explanation: "This describes two parallel actions in the past, so Past Continuous is used for both." },
+        { question: "She has ___ her homework.", options: ["finish", "finishing", "finished"], answer: "finished", explanation: "Present Perfect uses 'has/have' + V3 (past participle)." },
+        { question: "By this time next year, I ___ from college.", options: ["will graduate", "will have graduated", "graduated"], answer: "will have graduated", explanation: "Future Perfect is used for an action that will be completed by a certain time in the future." },
+        { question: "He said that he ___ the movie.", options: ["has seen", "had seen", "saw"], answer: "had seen", explanation: "This is reported speech, and the action of seeing the movie happened before he said it, requiring Past Perfect." },
+        { question: "The letter ___ by John.", options: ["was written", "wrote", "is writing"], answer: "was written", explanation: "This is a passive voice sentence in Past Simple. 'by John' indicates passive." },
+    ],
+    hard: [
+        { question: "They ___ for three hours when the storm hit.", options: ["had been driving", "drove", "were driving"], answer: "had been driving", explanation: "Past Perfect Continuous is used for an action that continued up to a specific point in the past ('when the storm hit')." },
+        { question: "If I had known, I ___ you.", options: ["would help", "would have helped", "helped"], answer: "would have helped", explanation: "This is a Third Conditional sentence (If + Past Perfect, would have + V3)." },
+        { question: "This time tomorrow, we ___ on a beach.", options: ["will be relaxing", "will relax", "relax"], answer: "will be relaxing", explanation: "Future Continuous is used for an action that will be in progress at a specific time in the future." },
+        { question: "The problem ___ by the experts for weeks.", options: ["has been studied", "is studied", "was studying"], answer: "has been studied", explanation: "Present Perfect Passive is used for an action that started in the past and continues up to the present, with the focus on the object." },
+        { question: "It is required that every student ___ a uniform.", options: ["wears", "wear", "is wearing"], answer: "wear", explanation: "This is a subjunctive mood sentence, where the base form of the verb is used after expressions like 'it is required that'." },
+    ]
+};
+
+// --- Practice Data (can be modified by Admin Panel) ---
+const initialPracticeData = [
+    { id: 1, sentence: "She ___ (go) to school every day.", answer: "goes", explanation: "Present Simple, 3rd person singular." },
+    { id: 2, sentence: "They ___ (play) football now.", answer: "are playing", explanation: "Present Continuous, action happening now." },
+    { id: 3, sentence: "I ___ (finish) my homework already.", answer: "have finished", explanation: "Present Perfect, action completed recently." },
+    { id: 4, sentence: "He ___ (read) a book when I saw him.", answer: "was reading", explanation: "Past Continuous, action in progress when another happened." },
+    { id: 5, sentence: "We ___ (visit) Paris next year.", answer: "will visit", explanation: "Future Simple, a planned future action." },
+    { id: 6, sentence: "The cat ___ (sleep) on the sofa.", answer: "is sleeping", explanation: "Present Continuous, current action." },
+    { id: 7, sentence: "They ___ (live) in London since 2010.", answer: "have lived", explanation: "Present Perfect, action started in past and continues." },
+    { id: 8, sentence: "She ___ (eat) dinner when the phone rang.", answer: "was eating", explanation: "Past Continuous, ongoing action interrupted." },
+    { id: 9, sentence: "By next month, I ___ (complete) the project.", answer: "will have completed", explanation: "Future Perfect, action completed by a future point." },
+    { id: 10, sentence: "The car ___ (repair) yesterday.", answer: "was repaired", explanation: "Past Simple Passive, focus on the car." },
+];
+
+
+// --- Helper Components ---
+const Card = ({ title, description, onClick, icon }) => {
+    const { t } = useContext(LanguageContext);
+    return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 text-center transform hover:scale-105 transition-transform duration-300 cursor-pointer flex flex-col items-center justify-center" onClick={onClick}>
+            <div className="text-5xl mb-4 text-blue-500">{icon}</div>
+            <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">{title}</h3>
+            {description && <p className="text-gray-600">{description}</p>}
+        </div>
+    );
+};
+
+const Button = ({ children, onClick, className = '', disabled = false }) => (
+    <button onClick={onClick} disabled={disabled} className={`px-8 py-3 font-semibold rounded-full text-white bg-blue-500 hover:bg-blue-600 transition-colors duration-300 shadow-lg transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed ${className}`}>
+        {children}
+    </button>
+);
+
+const BackButton = ({ onClick }) => {
+    const { t } = useContext(LanguageContext);
+    return (
+        <button onClick={onClick} className="absolute top-6 left-6 flex items-center text-blue-500 hover:text-blue-700 font-semibold transition-colors duration-300 z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            {t('back')}
+        </button>
+    );
+};
+
+const SpeakButton = ({ textToSpeak }) => {
+    const { t } = useContext(LanguageContext);
+    const speak = () => {
+        if ('speechSynthesis' in window) {
+            speechSynthesis.cancel(); // Cancel any previous speech
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = "en-US"; // Force English for better pronunciation
+            speechSynthesis.speak(utterance);
+        } else {
+            // Using a simple div for messages instead of alert()
+            const messageBox = document.getElementById('message-box');
+            if (messageBox) {
+                messageBox.textContent = "Sorry, your browser doesn't support text-to-speech.";
+                messageBox.style.display = 'block';
+                setTimeout(() => messageBox.style.display = 'none', 3000);
+            }
+        }
+    };
+
+    return (
+        <button onClick={speak} className="ml-2 text-blue-500 hover:text-blue-700" title={t('listen')}>
+            🔊
+        </button>
+    );
+};
+
+// --- Page Components ---
+
+const HomePage = ({ onStartLearn, onStartQuiz, onFeatureSelect }) => {
+    const { t, setLanguage } = useContext(LanguageContext);
+    const { user, logout } = useContext(AuthContext);
+
+    return (
+        <div className="w-full text-center flex flex-col justify-center items-center min-h-screen p-4 bg-gradient-to-br from-blue-100 to-purple-100">
+            <div className="max-w-4xl bg-white rounded-3xl shadow-2xl p-8 md:p-12">
+                <div className="flex justify-between items-center mb-4">
+                    <select
+                        onChange={(e) => setLanguage(e.target.value)}
+                        className="p-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="en">{t('english')}</option>
+                        <option value="si">{t('sinhala')}</option>
+                    </select>
+                    {user ? (
+                        <div className="flex items-center space-x-4">
+                            <span className="text-gray-700 font-medium">{t('loggedInAs')} {user.username}</span>
+                            <Button onClick={logout} className="bg-red-500 hover:bg-red-600 px-4 py-2 text-sm">
+                                {t('logout')}
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button onClick={() => onFeatureSelect('login')} className="bg-purple-500 hover:bg-purple-600 px-4 py-2 text-sm">
+                            {t('login')}
+                        </Button>
+                    )}
+                </div>
+                <h1 className="text-5xl md:text-7xl font-extrabold text-gray-800 mb-4 leading-tight">
+                    {t('welcome')} <span className="text-blue-600">{t('appName')}</span>
+                </h1>
+                <p className="text-lg md:text-xl text-gray-700 mb-10 px-4">{t('tagline')}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+                    <Button onClick={onStartLearn} className="bg-blue-600 hover:bg-blue-700 text-xl py-4">
+                        {t('learnTenses')}
+                    </Button>
+                    <Button onClick={onStartQuiz} className="bg-green-600 hover:bg-green-700 text-xl py-4">
+                        {t('takeAQuiz')}
+                    </Button>
+                </div>
+
+                <h2 className="text-3xl font-bold text-gray-800 mb-6">{t('dashboard')}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <Card
+                        title={t('practiceMode')}
+                        description={t('practiceModeDescription')}
+                        icon="✍️"
+                        onClick={() => onFeatureSelect('practice')}
+                    />
+                    <Card
+                        title={t('tenseConverter')}
+                        description={t('tenseConverterDescription')}
+                        icon="🔄"
+                        onClick={() => onFeatureSelect('converter')}
+                    />
+                    <Card
+                        title={t('timeline')}
+                        description={t('timelineDescription')}
+                        icon="⏳"
+                        onClick={() => onFeatureSelect('timeline')}
+                    />
+                    <Card
+                        title={t('flashcards')}
+                        description={t('flashcardsDescription')}
+                        icon="🎴"
+                        onClick={() => onFeatureSelect('flashcards')}
+                    />
+                    <Card
+                        title={t('dailyChallenge')}
+                        description={t('dailyChallengeDescription')}
+                        icon="🗓️"
+                        onClick={() => onFeatureSelect('dailyChallenge')}
+                    />
+                    <Card
+                        title={t('scoreTracker')}
+                        description={t('viewLeaderboard')}
+                        icon="📈"
+                        onClick={() => onFeatureSelect('leaderboard')} // Changed to leaderboard
+                    />
+                    {/* Admin Panel removed as per user request */}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ChooseVoicePage = ({ onSelectVoice, onBack }) => {
+    const { t } = useContext(LanguageContext);
+    return (
+        <div className="w-full p-4 md:p-8 flex flex-col justify-center items-center min-h-screen relative bg-gradient-to-br from-blue-100 to-purple-100">
+            <BackButton onClick={onBack} />
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">{t('chooseVoice')}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+                <Card title={t('activeVoice')} description={t('activeVoiceDesc')} icon="✍️" onClick={() => onSelectVoice('active')} />
+                <Card title={t('passiveVoice')} description={t('passiveVoiceDesc')} icon="📬" onClick={() => onSelectVoice('passive')} />
+            </div>
+        </div>
+    );
+};
+
+const TenseListPage = ({ voice, onSelectTense, onBack, tensesData }) => {
+    const { t } = useContext(LanguageContext);
+    const tenses = tensesData[voice] || [];
+    const title = voice.charAt(0).toUpperCase() + voice.slice(1);
+    return (
+        <div className="w-full p-4 md:p-8 min-h-screen relative bg-gradient-to-br from-blue-100 to-purple-100">
+            <BackButton onClick={onBack} />
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center pt-16">{t(title.toLowerCase())} {t('voiceTenses')}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
+                {tenses.map(tense => (
+                    <div key={tense.id} onClick={() => onSelectTense(tense)} className="bg-white rounded-2xl shadow-lg p-6 text-center transform hover:scale-105 transition-transform duration-300 cursor-pointer hover:shadow-blue-200">
+                        <h3 className="text-lg font-bold text-gray-800">{tense.name}</h3>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const TenseDetailPage = ({ tense, onBack }) => {
+    const { t } = useContext(LanguageContext);
+    return (
+        <div className="w-full p-4 md:p-8 min-h-screen relative flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
+            <BackButton onClick={onBack} />
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 w-full max-w-3xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-bold text-blue-600 mb-4 text-center">{tense.name}</h2>
+                <div className="bg-blue-50 rounded-lg p-4 mb-6 text-center">
+                    <p className="text-sm text-blue-800 font-semibold flex items-center justify-center">
+                        {t('rule')} <SpeakButton textToSpeak={tense.rule} />
+                    </p>
+                    <p className="text-lg text-blue-900 font-mono">{tense.rule}</p>
+                </div>
+                <div>
+                    <h3 className="text-xl font-bold text-gray-700 mb-4">{t('examples')}</h3>
+                    <ul className="space-y-3">
+                        {tense.examples.map((example, index) => (
+                            <li key={index} className="flex items-center">
+                                <span className="text-blue-500 font-bold mr-3">✓</span>
+                                <span className="text-gray-800">{example}</span>
+                                <SpeakButton textToSpeak={example} />
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ChooseDifficultyPage = ({ onSelectDifficulty, onBack }) => {
+    const { t } = useContext(LanguageContext);
+    return (
+        <div className="w-full p-4 md:p-8 flex flex-col justify-center items-center min-h-screen relative bg-gradient-to-br from-blue-100 to-purple-100">
+            <BackButton onClick={onBack} />
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">{t('chooseDifficulty')}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+                <Card title={t('easy')} description={t('easyDesc')} icon="🌱" onClick={() => onSelectDifficulty('easy')} />
+                <Card title={t('medium')} description={t('mediumDesc')} icon="🔥" onClick={() => onSelectDifficulty('medium')} />
+                <Card title={t('hard')} description={t('hardDesc')} icon="🚀" onClick={() => onSelectDifficulty('hard')} />
+            </div>
+        </div>
+    );
+};
+
+const QuizPage = ({ difficulty, onQuizComplete, onBack, quizData }) => {
+    const { t } = useContext(LanguageContext);
+    const [questions, setQuestions] = useState([]);
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [score, setScore] = useState(0);
+    const [selectedAnswer, setSelectedAnswer] = useState(null);
+    const [isAnswered, setIsAnswered] = useState(false);
+    const [quizResults, setQuizResults] = useState([]);
+
+    useEffect(() => {
+        // Ensure quizData[difficulty] exists before spreading
+        const selectedQuizQuestions = quizData[difficulty] || [];
+        const shuffled = [...selectedQuizQuestions].sort(() => Math.random() - 0.5);
+        setQuestions(shuffled);
+        setCurrentQuestionIndex(0);
+        setScore(0);
+        setSelectedAnswer(null);
+        setIsAnswered(false);
+        setQuizResults([]);
+    }, [difficulty, quizData]); // Depend on quizData to react to admin changes
+
+    const handleAnswerSelect = (option) => {
+        if (isAnswered) return;
+        const currentQuestion = questions[currentQuestionIndex];
+        const isCorrect = option === currentQuestion.answer;
+
+        setSelectedAnswer(option);
+        setIsAnswered(true);
+
+        if (isCorrect) {
+            setScore(prev => prev + 1);
+        }
+
+        setQuizResults(prev => [...prev, {
+            question: currentQuestion.question,
+            yourAnswer: option,
+            correctAnswer: currentQuestion.answer,
+            isCorrect: isCorrect,
+            explanation: currentQuestion.explanation || 'No explanation provided.'
+        }]);
+    };
+
+    const handleNextQuestion = () => {
+        if (currentQuestionIndex < questions.length - 1) {
+            setCurrentQuestionIndex(prev => prev + 1);
+            setSelectedAnswer(null);
+            setIsAnswered(false);
+        } else {
+            onQuizComplete(score, questions.length, quizResults);
+        }
+    };
+
+    if (questions.length === 0) {
+        return <div className="flex justify-center items-center min-h-screen text-gray-700">{t('loadingQuiz')}</div>;
+    }
+
+    const currentQuestion = questions[currentQuestionIndex];
+    const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+
+    return (
+        <div className="w-full p-4 md:p-8 min-h-screen relative flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
+            <BackButton onClick={onBack} />
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 w-full max-w-3xl mx-auto">
+                <div className="mb-6">
+                    <div className="flex justify-between items-center mb-2 text-gray-600">
+                        <span>{t('question')} {currentQuestionIndex + 1}/{questions.length}</span>
+                        <span className="font-bold">{t('score')}: {score}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                    </div>
+                </div>
+
+                <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-6 text-center">{currentQuestion.question}</h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {currentQuestion.options.map((option, index) => {
+                        const isCorrect = option === currentQuestion.answer;
+                        let buttonClass = 'bg-gray-100 hover:bg-gray-200 text-gray-800';
+                        if (isAnswered) {
+                            if (selectedAnswer === option) {
+                                buttonClass = isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white';
+                            } else if (isCorrect) {
+                                buttonClass = 'bg-green-500 text-white';
+                            }
+                        }
+                        return (
+                            <button key={index} onClick={() => handleAnswerSelect(option)} disabled={isAnswered} className={`p-4 rounded-lg text-lg transition-colors duration-200 ${buttonClass}`}>
+                                {option}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {isAnswered && (
+                    <div className="mt-6 text-center">
+                        <Button onClick={handleNextQuestion}>
+                            {currentQuestionIndex < questions.length - 1 ? t('nextQuestion') : t('finishQuiz')}
+                        </Button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const QuizResultsPage = ({ score, total, results, onRestart, onHome, difficulty }) => {
+    const { t } = useContext(LanguageContext);
+    const { user } = useContext(AuthContext);
+    const [userRank, setUserRank] = useState(null);
+    const [loadingRank, setLoadingRank] = useState(false);
+
+    const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
+    let message = '';
+    let icon = '';
+
+    if (percentage === 100) {
+        message = t('perfectScore');
+        icon = '🏆';
+    } else if (percentage >= 75) {
+        message = t('greatJob');
+        icon = '🎉';
+    } else if (percentage >= 50) {
+        message = t('goodTry');
+        icon = '👍';
+    } else {
+        message = t('keepPracticing');
+        icon = '💪';
+    }
+
+    const incorrectAnswers = results.filter(r => !r.isCorrect);
+
+    useEffect(() => {
+        const submitAndGetRank = async () => {
+            if (user && user.id && user.username) {
+                setLoadingRank(true);
+                try {
+                    // Simulate score submission
+                    // In a real app, you'd fetch from your Node.js/Express backend:
+                    // const submitResponse = await fetch('/api/scores', {
+                    //     method: 'POST',
+                    //     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
+                    //     body: JSON.stringify({ userId: user.id, username: user.username, score, total, difficulty, date: new Date().toISOString() })
+                    // });
+                    // const submitData = await submitResponse.json();
+
+                    // Simulate fetching leaderboard to determine rank
+                    // const leaderboardResponse = await fetch(`/api/scores/leaderboard/${difficulty}`, {
+                    //     headers: { 'Authorization': `Bearer ${user.token}` }
+                    // });
+                    // const leaderboardData = await leaderboardResponse.json();
+
+                    // Simulated leaderboard data
+                    const simulatedLeaderboard = [
+                        { userId: 'user_alice', username: 'Alice', score: 9, total: 10 },
+                        { userId: 'user_bob', username: 'Bob', score: 8, total: 10 },
+                        { userId: user.id, username: user.username, score: score, total: total }, // Insert current user's score
+                        { userId: 'user_charlie', username: 'Charlie', score: 7, total: 10 },
+                    ].sort((a, b) => (b.score / b.total) - (a.score / a.total) || b.score - a.score); // Sort by percentage, then raw score
+
+                    const userEntry = simulatedLeaderboard.find(entry => entry.userId === user.id && entry.score === score && entry.total === total);
+                    if (userEntry) {
+                        const rank = simulatedLeaderboard.indexOf(userEntry) + 1;
+                        setUserRank(rank);
+                    } else {
+                        setUserRank('N/A'); // Should not happen with proper insertion
+                    }
+                } catch (error) {
+                    console.error('Error submitting score or getting rank:', error);
+                    setUserRank('Error');
+                } finally {
+                    setLoadingRank(false);
+                }
+            }
+        };
+
+        submitAndGetRank();
+    }, [user, score, total, difficulty]);
+
+    return (
+        <div className="w-full p-4 md:p-8 flex flex-col justify-center items-center min-h-screen bg-gradient-to-br from-blue-100 to-purple-100">
+            <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 w-full max-w-2xl mx-auto text-center">
+                <div className="text-6xl mb-4">{icon}</div>
+                <h2 className="text-3xl font-bold text-gray-800 mb-2">{t('quizComplete')}</h2>
+                <p className="text-xl text-gray-600 mb-4">{message}</p>
+                <p className="text-4xl font-bold text-blue-600 mb-6">{t('yourScore')} {score} / {total}</p>
+
+                {user && (
+                    <div className="mb-6">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2">{t('placement')}</h3>
+                        {loadingRank ? (
+                            <p className="text-gray-600">{t('loading')}</p>
+                        ) : (
+                            <p className="text-3xl font-bold text-purple-600">{t('yourRank')} {userRank !== null ? userRank : 'N/A'}</p>
+                        )}
+                    </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Button onClick={onRestart}>{t('tryAgain')}</Button>
+                    <Button onClick={onHome} className="bg-gray-500 hover:bg-gray-600">{t('goHome')}</Button>
+                </div>
+            </div>
+
+            {incorrectAnswers.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-xl p-8 mt-8 w-full max-w-2xl mx-auto">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">{t('mistakeReview')}</h3>
+                    <ul className="space-y-4 text-left">
+                        {incorrectAnswers.map((result, index) => (
+                            <li key={index} className="bg-red-50 p-4 rounded-lg border border-red-200">
+                                <p className="font-semibold text-gray-700 mb-2">{result.question}</p>
+                                <p><span className="font-bold text-red-600">{t('yourAnswer')}</span> {result.yourAnswer} ❌</p>
+                                <p><span className="font-bold text-green-600">{t('correctAnswer')}</span> {result.correctAnswer} ✅</p>
+                                {result.explanation && (
+                                    <p className="text-sm text-gray-600 mt-2"><span className="font-bold">{t('explanation')}</span> {result.explanation}</p>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// --- NEW FEATURE: Practice Mode (Fill in the blanks) ---
+const PracticePage = ({ onBack, practiceData }) => {
+    const { t } = useContext(LanguageContext);
+    const [currentPracticeIndex, setCurrentPracticeIndex] = useState(0);
+    const [userInput, setUserInput] = useState('');
+    const [feedback, setFeedback] = useState(null); // null, 'correct', 'incorrect'
+    const [showExplanation, setShowExplanation] = useState(false);
+
+    const currentPractice = practiceData[currentPracticeIndex];
+
+    const handleCheckAnswer = () => {
+        if (userInput.toLowerCase().trim() === currentPractice.answer.toLowerCase().trim()) {
+            setFeedback('correct');
+        } else {
+            setFeedback('incorrect');
+        }
+        setShowExplanation(true);
+    };
+
+    const handleNextPractice = () => {
+        setUserInput('');
+        setFeedback(null);
+        setShowExplanation(false);
+        setCurrentPracticeIndex(prev => (prev + 1) % practiceData.length);
+    };
+
+    const handleShowAnswer = () => {
+        setUserInput(currentPractice.answer);
+        setFeedback('correct'); // Show as correct if answer is revealed
+        setShowExplanation(true);
+    };
+
+    const renderSentenceWithBlank = () => {
+        const parts = currentPractice.sentence.split('___');
+        return (
+            <p className="text-xl md:text-2xl text-gray-800 mb-6 text-center">
+                {parts[0]}
+                <input
+                    type="text"
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    className={`inline-block w-40 p-2 mx-2 border-b-2 ${feedback === 'correct' ? 'border-green-500' : feedback === 'incorrect' ? 'border-red-500' : 'border-blue-300'} focus:outline-none focus:border-blue-500 text-center font-semibold`}
+                    placeholder="_____"
+                    disabled={feedback !== null}
+                />
+                {parts[1]}
+            </p>
+        );
+    };
+
+    return (
+        <div className="w-full p-4 md:p-8 min-h-screen relative flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
+            <BackButton onClick={onBack} />
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 w-full max-w-3xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-bold text-blue-600 mb-6 text-center">{t('practiceMode')}</h2>
+                {currentPractice && (
+                    <>
+                        <p className="text-lg text-gray-700 mb-4">{t('fillInTheBlank')}</p>
+                        {renderSentenceWithBlank()}
+
+                        <div className="flex justify-center gap-4 mt-6">
+                            {!feedback && (
+                                <Button onClick={handleCheckAnswer} disabled={userInput.trim() === ''}>
+                                    {t('checkAnswer')}
+                                </Button>
+                            )}
+                            {feedback && (
+                                <Button onClick={handleNextPractice} className="bg-green-500 hover:bg-green-600">
+                                    {t('nextPractice')}
+                                </Button>
+                            )}
+                            {feedback === 'incorrect' && !showExplanation && (
+                                <Button onClick={handleShowAnswer} className="bg-yellow-500 hover:bg-yellow-600">
+                                    {t('showAnswer')}
+                                </Button>
+                            )}
+                        </div>
+
+                        {feedback && (
+                            <div className={`mt-6 p-4 rounded-lg text-center ${feedback === 'correct' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                <p className="font-bold text-lg">{feedback === 'correct' ? t('correct') : t('incorrect')}</p>
+                                {showExplanation && currentPractice.explanation && (
+                                    <p className="text-sm mt-2">{t('explanation')} {currentPractice.explanation}</p>
+                                )}
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+// --- NEW FEATURE: Tense Converter Tool ---
+const TenseConverterPage = ({ onBack, tensesData }) => {
+    const { t } = useContext(LanguageContext);
+    const [inputSentence, setInputSentence] = useState('');
+    const [originalTenseId, setOriginalTenseId] = useState('');
+    const [originalVoice, setOriginalVoice] = useState('');
+    const [targetTenseId, setTargetTenseId] = useState('');
+    const [targetVoice, setTargetVoice] = useState('');
+    const [convertedSentence, setConvertedSentence] = useState('');
+    const [message, setMessage] = useState('');
+
+    const allTenses = [
+        ...tensesData.active.map(t => ({ ...t, voice: 'active' })),
+        ...tensesData.passive.map(t => ({ ...t, voice: 'passive' }))
+    ];
+
+    const getTenseById = (id, voice) => allTenses.find(t => t.id === parseInt(id) && t.voice === voice);
+
+    // Simplified conversion logic (highly basic and will not cover all cases)
+    const convertSentence = () => {
+        setMessage('');
+        setConvertedSentence('');
+
+        if (!inputSentence.trim()) {
+            setMessage(t('sentenceRequired'));
+            return;
+        }
+        if (!originalTenseId || !originalVoice || !targetTenseId || !targetVoice) {
+            setMessage(t('selectOriginalAndTarget'));
+            return;
+        }
+
+        const originalTense = getTenseById(originalTenseId, originalVoice);
+        const targetTense = getTenseById(targetTenseId, targetVoice);
+
+        if (!originalTense || !targetTense) {
+            setMessage("Error: Tense not found.");
+            return;
+        }
+
+        // This is a highly simplified placeholder.
+        // A real-world converter would need a robust NLP parser and grammar rules.
+        // For demonstration, we'll just show a generic message or a very basic transformation.
+        if (originalTense.name === targetTense.name && originalTense.voice === targetTense.voice) {
+            setConvertedSentence(inputSentence);
+            setMessage("Sentence is already in the target tense/voice.");
+            return;
+        }
+
+        // Example of a very basic conversion (e.g., Active to Passive for Present Simple)
+        if (originalTense.name === 'Present Simple' && originalVoice === 'active' &&
+            targetTense.name === 'Present Simple' && targetVoice === 'passive') {
+            // Very naive conversion: "Subject V1 Object" -> "Object is/are V3 by Subject"
+            const parts = inputSentence.toLowerCase().split(' ');
+            if (parts.length >= 3) {
+                const subject = parts[0];
+                const verb = parts[1];
+                const object = parts.slice(2).join(' '); // Rest of the sentence as object
+                let converted = "";
+                if (object.length > 0) {
+                    converted = `${object.charAt(0).toUpperCase() + object.slice(1)} is ${verb}d by ${subject}.`;
+                } else {
+                    converted = `${inputSentence} (Passive conversion not straightforward)`;
+                }
+                setConvertedSentence(converted);
+                setMessage("Note: This is a simplified conversion and may not be grammatically perfect for all sentences.");
+                return;
+            }
+        }
+
+        setMessage(t('noConversionAvailable'));
+    };
+
+    return (
+        <div className="w-full p-4 md:p-8 min-h-screen relative flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
+            <BackButton onClick={onBack} />
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 w-full max-w-3xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-bold text-blue-600 mb-6 text-center">{t('tenseConverter')}</h2>
+
+                <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">{t('inputSentence')}</label>
+                    <input
+                        type="text"
+                        className={formInputClasses}
+                        value={inputSentence}
+                        onChange={(e) => setInputSentence(e.target.value)}
+                        placeholder="e.g., He reads a book."
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label className="block text-gray-700 text-sm font-bold mb-2">{t('originalTense')}</label>
+                        <select
+                            className={formInputClasses}
+                            value={originalTenseId}
+                            onChange={(e) => setOriginalTenseId(e.target.value)}
+                        >
+                            <option value="">{t('selectTense')}</option>
+                            {allTenses.map(tense => (
+                                <option key={`orig-${tense.id}-${tense.voice}`} value={tense.id}>
+                                    {tense.name} ({tense.voice === 'active' ? t('active') : t('passive')})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-gray-700 text-sm font-bold mb-2">{t('selectVoice')}</label>
+                        <select
+                            className={formInputClasses}
+                            value={originalVoice}
+                            onChange={(e) => setOriginalVoice(e.target.value)}
+                        >
+                            <option value="">{t('selectVoice')}</option>
+                            <option value="active">{t('active')}</option>
+                            <option value="passive">{t('passive')}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label className="block text-gray-700 text-sm font-bold mb-2">{t('targetTense')}</label>
+                        <select
+                            className={formInputClasses}
+                            value={targetTenseId}
+                            onChange={(e) => setTargetTenseId(e.target.value)}
+                        >
+                            <option value="">{t('selectTense')}</option>
+                            {allTenses.map(tense => (
+                                <option key={`target-${tense.id}-${tense.voice}`} value={tense.id}>
+                                    {tense.name} ({tense.voice === 'active' ? t('active') : t('passive')})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-gray-700 text-sm font-bold mb-2">{t('selectVoice')}</label>
+                        <select
+                            className={formInputClasses}
+                            value={targetVoice}
+                            onChange={(e) => setTargetVoice(e.target.value)}
+                        >
+                            <option value="">{t('selectVoice')}</option>
+                            <option value="active">{t('active')}</option>
+                            <option value="passive">{t('passive')}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="text-center mb-6">
+                    <Button onClick={convertSentence}>{t('convert')}</Button>
+                </div>
+
+                {message && (
+                    <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded-lg" role="alert">
+                        <p>{message}</p>
+                    </div>
+                )}
+
+                {convertedSentence && (
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <h3 className="text-xl font-bold text-blue-800 mb-2">{t('convertedSentence')}</h3>
+                        <p className="text-lg text-gray-800">{convertedSentence}</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// --- NEW FEATURE: Tense Timeline Visualization ---
+const TimelinePage = ({ onBack }) => {
+    const { t } = useContext(LanguageContext);
+    // Simplified representation of tenses for timeline
+    const timelineTenses = [
+        { name: t('pastPerfectContinuous'), position: 5, color: 'bg-indigo-500', duration: 'long' },
+        { name: t('pastPerfect'), position: 10, color: 'bg-indigo-600', duration: 'short' },
+        { name: t('pastContinuous'), position: 20, color: 'bg-purple-500', duration: 'long' },
+        { name: t('pastSimple'), position: 30, color: 'bg-purple-600', duration: 'instant' },
+        { name: t('presentPerfectContinuous'), position: 45, color: 'bg-green-500', duration: 'long' },
+        { name: t('presentPerfect'), position: 50, color: 'bg-green-600', duration: 'short' },
+        { name: t('presentContinuous'), position: 60, color: 'bg-blue-500', duration: 'long' },
+        { name: t('presentSimple'), position: 70, color: 'bg-blue-600', duration: 'instant' },
+        { name: t('futureSimple'), position: 80, color: 'bg-teal-600', duration: 'instant' },
+        { name: t('futureContinuous'), position: 85, color: 'bg-teal-500', duration: 'long' },
+        { name: t('futurePerfect'), position: 90, color: 'bg-orange-600', duration: 'short' },
+        { name: t('futurePerfectContinuous'), position: 95, color: 'bg-orange-500', duration: 'long' },
+    ];
+
+    return (
+        <div className="w-full p-4 md:p-8 min-h-screen relative bg-gradient-to-br from-blue-100 to-purple-100">
+            <BackButton onClick={onBack} />
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 w-full max-w-5xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-bold text-blue-600 mb-8 text-center">{t('timeline')}</h2>
+                <p className="text-gray-700 text-center mb-8">{t('timelineDescription')}</p>
+
+                <div className="relative h-2 bg-gray-300 rounded-full my-12 mx-auto max-w-4xl">
+                    {/* Time markers */}
+                    <div className="absolute -left-4 top-1/2 -translate-y-1/2 text-gray-600 font-bold">Past</div>
+                    <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 text-gray-600 font-bold">Present</div>
+                    <div className="absolute -right-4 top-1/2 -translate-y-1/2 text-gray-600 font-bold">Future</div>
+
+                    {/* Tense markers */}
+                    {timelineTenses.map((tense, index) => (
+                        <div
+                            key={index}
+                            className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full ${tense.color} border-2 border-white shadow-md`}
+                            style={{ left: `${tense.position}%`, top: '50%', width: '20px', height: '20px' }}
+                            title={tense.name}
+                        >
+                            <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 text-xs font-semibold text-gray-700 whitespace-nowrap">
+                                {tense.name}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <p className="text-center text-gray-600 mt-16 text-sm">
+                    (This timeline is a simplified visual representation. Exact usage and overlap can be more complex.)
+                </p>
+            </div>
+        </div>
+    );
+};
+
+
+// --- NEW FEATURE: Tense Flashcards ---
+const FlashcardsPage = ({ onBack, tensesData }) => {
+    const { t } = useContext(LanguageContext);
+    const allFlashcards = [
+        ...tensesData.active.map(t => ({ front: `${t.name} (Active)`, back: t.rule })),
+        ...tensesData.passive.map(t => ({ front: `${t.name} (Passive)`, back: t.rule }))
+    ];
+
+    const [currentCardIndex, setCurrentCardIndex] = useState(0);
+    const [isFlipped, setIsFlipped] = useState(false);
+
+    const handleFlip = () => setIsFlipped(!isFlipped);
+    const handleNextCard = () => {
+        setIsFlipped(false);
+        setCurrentCardIndex(prev => (prev + 1) % allFlashcards.length);
+    };
+    const handlePrevCard = () => {
+        setIsFlipped(false);
+        setCurrentCardIndex(prev => (prev - 1 + allFlashcards.length) % allFlashcards.length);
+    };
+
+    const currentCard = allFlashcards[currentCardIndex];
+
+    return (
+        <div className="w-full p-4 md:p-8 min-h-screen relative flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
+            <BackButton onClick={onBack} />
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 w-full max-w-xl mx-auto text-center">
+                <h2 className="text-3xl md:text-4xl font-bold text-blue-600 mb-8">{t('flashcards')}</h2>
+                <p className="text-gray-700 text-center mb-8">{t('flashcardsDescription')}</p>
+
+                <div
+                    className={`relative w-full h-64 bg-blue-100 rounded-lg shadow-md flex items-center justify-center text-2xl font-bold text-gray-800 cursor-pointer transform transition-transform duration-500 preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}
+                    onClick={handleFlip}
+                    style={{ perspective: '1000px' }}
+                >
+                    <div className="absolute w-full h-full backface-hidden flex flex-col items-center justify-center p-4">
+                        <p className="text-gray-600 text-sm mb-2">{t('front')}</p>
+                        {currentCard.front}
+                    </div>
+                    <div className="absolute w-full h-full backface-hidden flex flex-col items-center justify-center p-4 rotate-y-180">
+                        <p className="text-gray-600 text-sm mb-2">{t('flashcardBack')}</p>
+                        <p className="text-lg text-blue-800 font-mono">{currentCard.back}</p>
+                    </div>
+                </div>
+
+                <div className="flex justify-between mt-8">
+                    <Button onClick={handlePrevCard} className="bg-gray-500 hover:bg-gray-600">
+                        {t('previousCard')}
+                    </Button>
+                    <Button onClick={handleFlip} className="bg-purple-500 hover:bg-purple-600">
+                        {t('flip')}
+                    </Button>
+                    <Button onClick={handleNextCard}>
+                        {t('nextCard')}
+                    </Button>
+                </div>
+                <p className="text-gray-600 text-sm mt-4">
+                    {currentCardIndex + 1} / {allFlashcards.length}
+                </p>
+            </div>
+        </div>
+    );
+};
+
+// --- NEW FEATURE: Daily Challenge / Random Quiz ---
+const DailyChallengePage = ({ onBack, onStartQuiz, quizData }) => {
+    const { t } = useContext(LanguageContext);
+    const [challengeCompleted, setChallengeCompleted] = useState(false);
+    const [lastChallengeDate, setLastChallengeDate] = useState(null);
+    const [dailyQuestions, setDailyQuestions] = useState([]);
+
+    useEffect(() => {
+        const storedDate = localStorage.getItem('lastChallengeDate');
+        const today = new Date().toDateString();
+
+        if (storedDate === today) {
+            setChallengeCompleted(true);
+            const storedQuestions = JSON.parse(localStorage.getItem('dailyChallengeQuestions'));
+            if (storedQuestions) {
+                setDailyQuestions(storedQuestions);
+            }
+        } else {
+            setChallengeCompleted(false);
+            setLastChallengeDate(null);
+            // Generate new questions for today
+            const allQuizQuestions = [...quizData.easy, ...quizData.medium, ...quizData.hard];
+            const shuffled = allQuizQuestions.sort(() => Math.random() - 0.5);
+            const selected = shuffled.slice(0, 5); // 5 random questions for daily challenge
+            setDailyQuestions(selected);
+            localStorage.setItem('dailyChallengeQuestions', JSON.stringify(selected));
+        }
+    }, [quizData]);
+
+    const startDailyQuiz = () => {
+        // This will navigate to the QuizPage, but with dailyQuestions
+        onStartQuiz('daily', dailyQuestions); // 'daily' is a special difficulty for this
+    };
+
+    const handleDailyChallengeComplete = (score, total, results) => {
+        const today = new Date().toDateString();
+        localStorage.setItem('lastChallengeDate', today);
+        setChallengeCompleted(true);
+        // Optionally store daily challenge score
+        const dailyScores = JSON.parse(localStorage.getItem('dailyChallengeScores') || '[]');
+        dailyScores.push({ date: today, score, total, results });
+        localStorage.setItem('dailyChallengeScores', JSON.stringify(dailyScores));
+        // Then navigate to results page
+        onStartQuiz('daily', dailyQuestions, { score, total, results }); // Pass score, total, results
+    };
+
+
+    return (
+        <div className="w-full p-4 md:p-8 min-h-screen relative flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
+            <BackButton onClick={onBack} />
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 w-full max-w-2xl mx-auto text-center">
+                <h2 className="text-3xl md:text-4xl font-bold text-blue-600 mb-8">{t('dailyChallengeTitle')}</h2>
+                <p className="text-gray-700 text-center mb-8">{t('dailyChallengeDescription')}</p>
+
+                {challengeCompleted ? (
+                    <div className="text-center">
+                        <p className="text-2xl text-green-600 font-semibold mb-4">{t('challengeComplete')}</p>
+                        <p className="text-lg text-gray-700 mb-6">{t('comeBackTomorrow')}</p>
+                        <Button onClick={() => onBack()}>{t('goHome')}</Button>
+                    </div>
+                ) : (
+                    <div className="text-center">
+                        <Button onClick={startDailyQuiz}>{t('startChallenge')}</Button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// --- NEW FEATURE: Leaderboard (replaces Score Tracker) ---
+const LeaderboardPage = ({ onBack }) => {
+    const { t } = useContext(LanguageContext);
+    const { user } = useContext(AuthContext);
+    const [leaderboardData, setLeaderboardData] = useState({}); // { easy: [], medium: [], hard: [] }
+    const [loading, setLoading] = useState(true);
+    const [selectedDifficulty, setSelectedDifficulty] = useState('easy');
+
+    useEffect(() => {
+        const fetchLeaderboard = async () => {
+            setLoading(true);
+            try {
+                // In a real app, you'd fetch from your Node.js/Express backend:
+                // const response = await fetch(`/api/scores/leaderboard/${selectedDifficulty}`, {
+                //     headers: { 'Authorization': user ? `Bearer ${user.token}` : '' }
+                // });
+                // const data = await response.json();
+
+                // Simulated leaderboard data (more realistic for multiple users)
+                const simulatedData = {
+                    easy: [
+                        { userId: 'user_alice', username: 'Alice', score: 10, total: 10 },
+                        { userId: 'user_bob', username: 'Bob', score: 9, total: 10 },
+                        { userId: 'user_charlie', username: 'Charlie', score: 8, total: 10 },
+                    ],
+                    medium: [
+                        { userId: 'user_david', username: 'David', score: 9, total: 10 },
+                        { userId: 'user_eve', username: 'Eve', score: 8, total: 10 },
+                        { userId: 'user_frank', username: 'Frank', score: 7, total: 10 },
+                    ],
+                    hard: [
+                        { userId: 'user_grace', username: 'Grace', score: 8, total: 10 },
+                        { userId: 'user_helen', username: 'Helen', score: 7, total: 10 },
+                        { userId: 'user_ivan', username: 'Ivan', score: 6, total: 10 },
+                    ]
+                };
+
+                // Add current user's locally stored scores for display if logged in
+                const localScores = JSON.parse(localStorage.getItem('quizScores') || '[]');
+                const userScoresForDifficulty = localScores.filter(s => s.difficulty === selectedDifficulty && user && s.userId === user.id);
+
+                let combinedLeaderboard = [...(simulatedData[selectedDifficulty] || [])];
+
+                // Merge and sort
+                userScoresForDifficulty.forEach(userScore => {
+                    // Check if this specific score already exists in simulated data to avoid duplicates for the same user/score
+                    const exists = combinedLeaderboard.some(entry =>
+                        entry.userId === userScore.userId && entry.score === userScore.score && entry.total === userScore.total
+                    );
+                    if (!exists) {
+                        combinedLeaderboard.push({
+                            userId: userScore.userId,
+                            username: userScore.username, // Assuming username is stored with local score
+                            score: userScore.score,
+                            total: userScore.total
+                        });
+                    }
+                });
+
+                // Sort by score/total ratio, then by raw score, then by username for tie-breaking
+                combinedLeaderboard.sort((a, b) => {
+                    const ratioA = a.total > 0 ? a.score / a.total : 0;
+                    const ratioB = b.total > 0 ? b.score / b.total : 0;
+                    if (ratioB !== ratioA) return ratioB - ratioA;
+                    if (b.score !== a.score) return b.score - a.score;
+                    return a.username.localeCompare(b.username);
+                });
+
+                // Assign ranks
+                const rankedLeaderboard = combinedLeaderboard.map((entry, index) => ({
+                    ...entry,
+                    rank: index + 1
+                }));
+
+                setLeaderboardData(prev => ({ ...prev, [selectedDifficulty]: rankedLeaderboard }));
+
+            } catch (error) {
+                console.error('Error fetching leaderboard:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLeaderboard();
+    }, [selectedDifficulty, user]); // Refetch when difficulty or user changes
+
+    return (
+        <div className="w-full p-4 md:p-8 min-h-screen relative bg-gradient-to-br from-blue-100 to-purple-100">
+            <BackButton onClick={onBack} />
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 w-full max-w-3xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-bold text-blue-600 mb-8 text-center">{t('leaderboard')}</h2>
+
+                <div className="mb-6 text-center">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">{t('difficulty')}:</label>
+                    <select
+                        className={formInputClasses}
+                        value={selectedDifficulty}
+                        onChange={(e) => setSelectedDifficulty(e.target.value)}
+                    >
+                        <option value="easy">{t('easy')}</option>
+                        <option value="medium">{t('medium')}</option>
+                        <option value="hard">{t('hard')}</option>
+                    </select>
+                </div>
+
+                {loading ? (
+                    <p className="text-center text-gray-600">{t('loading')}</p>
+                ) : (
+                    <>
+                        {leaderboardData[selectedDifficulty] && leaderboardData[selectedDifficulty].length > 0 ? (
+                            <div className="overflow-x-auto rounded-lg shadow-md">
+                                <table className="min-w-full bg-white">
+                                    <thead className="bg-gray-200">
+                                        <tr>
+                                            <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider rounded-tl-lg">
+                                                {t('rank')}
+                                            </th>
+                                            <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                                                {t('usernameCol')}
+                                            </th>
+                                            <th className="py-3 px-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider rounded-tr-lg">
+                                                {t('scoreCol')}
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {leaderboardData[selectedDifficulty].map((entry, index) => (
+                                            <tr key={entry.userId + '-' + index} className={user && user.id === entry.userId ? 'bg-blue-50 font-bold' : 'hover:bg-gray-50'}>
+                                                <td className="py-3 px-4 whitespace-nowrap text-gray-800">{entry.rank}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-gray-800">{entry.username}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-right text-gray-800">{entry.score} / {entry.total}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-600">{t('noScoresForDifficulty')}</p>
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+// --- NEW FEATURE: Login/Register Page ---
+const LoginPage = ({ onBack, onLoginSuccess, onRegisterSuccess }) => {
+    const { t } = useContext(LanguageContext);
+    const { login, register, loading } = useContext(AuthContext);
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [message, setMessage] = useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setMessage('');
+        if (isRegistering) {
+            const result = await register(username, password);
+            if (result.success) {
+                setMessage(t('registerSuccess'));
+                onRegisterSuccess();
+            } else {
+                setMessage(result.message || t('registerFailed'));
+            }
+        } else {
+            const result = await login(username, password);
+            if (result.success) {
+                setMessage(t('loginSuccess'));
+                onLoginSuccess();
+            } else {
+                setMessage(result.message || t('loginFailed'));
+            }
+        }
+    };
+
+    return (
+        <div className="w-full p-4 md:p-8 min-h-screen relative flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
+            <BackButton onClick={onBack} />
+            <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 w-full max-w-md mx-auto text-center">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8">
+                    {isRegistering ? t('register') : t('login')}
+                </h2>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
+                            {t('username')}
+                        </label>
+                        <input
+                            type="text"
+                            id="username"
+                            className={formInputClasses}
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+                            {t('password')}
+                        </label>
+                        <input
+                            type="password"
+                            id="password"
+                            className={formInputClasses}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                    </div>
+                    {message && (
+                        <div className={`p-3 rounded-lg ${message.includes('successful') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {message}
+                        </div>
+                    )}
+                    <Button type="submit" disabled={loading} className="w-full">
+                        {loading ? t('loading') : (isRegistering ? t('register') : t('login'))}
+                    </Button>
+                </form>
+                <div className="mt-6">
+                    {isRegistering ? (
+                        <p className="text-gray-600">
+                            {t('alreadyAMember')}{' '}
+                            <button onClick={() => setIsRegistering(false)} className="text-blue-600 hover:underline font-semibold">
+                                {t('login')}
+                            </button>
+                        </p>
+                    ) : (
+                        <p className="text-gray-600">
+                            {t('notAMember')}{' '}
+                            <button onClick={() => setIsRegistering(true)} className="text-blue-600 hover:underline font-semibold">
+                                {t('register')}
+                            </button>
+                        </p>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// --- Main App Component ---
+export default function App() {
+    const [page, setPage] = useState('home');
+    const [history, setHistory] = useState([]);
+    const [selectedVoice, setSelectedVoice] = useState(null);
+    const [selectedTense, setSelectedTense] = useState(null);
+    const [selectedDifficulty, setSelectedDifficulty] = useState(null);
+    const [quizScore, setQuizScore] = useState({ score: 0, total: 0, results: [] });
+    const [currentLanguage, setCurrentLanguage] = useState('en');
+
+    // State for dynamic data (kept local for now, can be moved to DB if full backend is implemented)
+    const [tensesData, setTensesData] = useState(() => {
+        const storedTenses = localStorage.getItem('tensesData');
+        return storedTenses ? JSON.parse(storedTenses) : initialTensesData;
+    });
+    const [quizData, setQuizData] = useState(() => {
+        const storedQuiz = localStorage.getItem('quizData');
+        return storedQuiz ? JSON.parse(storedQuiz) : initialQuizData;
+    });
+    const [practiceData, setPracticeData] = useState(() => {
+        const storedPractice = localStorage.getItem('practiceData');
+        return storedPractice ? JSON.parse(storedPractice) : initialPracticeData;
+    });
+
+    // Update localStorage whenever data changes
+    useEffect(() => {
+        localStorage.setItem('tensesData', JSON.stringify(tensesData));
+    }, [tensesData]);
+
+    useEffect(() => {
+        localStorage.setItem('quizData', JSON.stringify(quizData));
+    }, [quizData]);
+
+    useEffect(() => {
+        localStorage.setItem('practiceData', JSON.stringify(practiceData));
+    }, [practiceData]);
+
+
+    const navigateTo = (newPage) => {
+        setHistory([...history, page]);
+        setPage(newPage);
+    };
+
+    const goBack = () => {
+        const previousPage = history.pop();
+        if (previousPage) {
+            setHistory([...history]);
+            setPage(previousPage);
+        } else {
+            setPage('home');
+        }
+    };
+
+    const goHome = () => {
+        setHistory([]);
+        setPage('home');
+    }
+
+    const handleQuizComplete = (score, total, results) => {
+        // Moved useContext here, so it's called within the AuthProvider's scope
+        const { user } = useContext(AuthContext);
+        setQuizScore({ score, total, results });
+        // Store score in localStorage (for leaderboard simulation)
+        if (user) {
+            const storedScores = JSON.parse(localStorage.getItem('quizScores') || '[]');
+            storedScores.push({
+                date: new Date().toISOString(),
+                userId: user.id,
+                username: user.username,
+                score,
+                total,
+                difficulty: selectedDifficulty
+            });
+            localStorage.setItem('quizScores', JSON.stringify(storedScores));
+        }
+        navigateTo('results');
+    };
+
+    const renderPage = () => {
+        switch (page) {
+            case 'home':
+                return <HomePage
+                    onStartLearn={() => navigateTo('chooseVoice')}
+                    onStartQuiz={() => navigateTo('chooseDifficulty')}
+                    onFeatureSelect={navigateTo}
+                />;
+            case 'login':
+                return <LoginPage onBack={goBack} onLoginSuccess={goHome} onRegisterSuccess={goHome} />;
+            case 'chooseVoice':
+                return <ChooseVoicePage onSelectVoice={(voice) => { setSelectedVoice(voice); navigateTo('list'); }} onBack={goBack} />;
+            case 'list':
+                return <TenseListPage voice={selectedVoice} onSelectTense={(tense) => { setSelectedTense(tense); navigateTo('detail'); }} onBack={goBack} tensesData={tensesData} />;
+            case 'detail':
+                return <TenseDetailPage tense={selectedTense} onBack={goBack} />;
+            case 'chooseDifficulty':
+                return <ChooseDifficultyPage onSelectDifficulty={(difficulty) => { setSelectedDifficulty(difficulty); navigateTo('quiz'); }} onBack={goBack} />;
+            case 'quiz':
+                // Special handling for daily challenge quiz
+                const quizQuestions = selectedDifficulty === 'daily' ? JSON.parse(localStorage.getItem('dailyChallengeQuestions') || '[]') : quizData[selectedDifficulty];
+                return <QuizPage difficulty={selectedDifficulty} onQuizComplete={handleQuizComplete} onBack={() => selectedDifficulty === 'daily' ? navigateTo('dailyChallenge') : navigateTo('chooseDifficulty')} quizData={{ [selectedDifficulty]: quizQuestions }} />;
+            case 'results':
+                return <QuizResultsPage score={quizScore.score} total={quizScore.total} results={quizScore.results} onRestart={() => navigateTo('quiz')} onHome={goHome} difficulty={selectedDifficulty} />;
+            case 'practice':
+                return <PracticePage onBack={goBack} practiceData={practiceData} />;
+            case 'converter':
+                return <TenseConverterPage onBack={goBack} tensesData={tensesData} />;
+            case 'timeline':
+                return <TimelinePage onBack={goBack} />;
+            case 'flashcards':
+                return <FlashcardsPage onBack={goBack} tensesData={tensesData} />;
+            case 'dailyChallenge':
+                return <DailyChallengePage onBack={goBack} onStartQuiz={(difficulty, questions, results) => {
+                    setSelectedDifficulty(difficulty);
+                    if (results) { // If results are passed, it means daily challenge is complete
+                        setQuizScore(results);
+                        navigateTo('results');
+                    } else {
+                        navigateTo('quiz');
+                    }
+                }} quizData={quizData} />;
+            case 'leaderboard': // Renamed from scoreTracker
+                return <LeaderboardPage onBack={goBack} />;
+            // Admin Panel removed
+            default:
+                return <HomePage onStartLearn={() => navigateTo('chooseVoice')} onStartQuiz={() => navigateTo('chooseDifficulty')} onFeatureSelect={navigateTo} />;
+        }
+    };
+
+    return (
+        <LanguageContext.Provider value={{ t: (key) => translations[currentLanguage][key] || key, setLanguage: setCurrentLanguage }}>
+            <AuthProvider>
+                <main className="bg-gray-50 font-sans w-full min-h-screen antialiased">
+                    {renderPage()}
+                    {/* Message box for non-alert messages */}
+                    <div id="message-box" className="fixed bottom-4 right-4 bg-black text-white px-4 py-2 rounded-lg shadow-lg hidden z-50"></div>
+                </main>
+            </AuthProvider>
+        </LanguageContext.Provider>
+    );
+}
+
+/*
+// --- Simulated Backend (Node.js/Express with Mongoose) ---
+// This code would run on a server, not in the React app.
+// It's provided here to illustrate how the frontend would interact with it.
+
+// Install these packages:
+// npm install express mongoose bcryptjs jsonwebtoken dotenv cors
+
+// server.js
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const cors = require('cors');
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware
+app.use(cors());
+app.use(express.json()); // For parsing application/json
+
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/alphabetz'; // Use provided URI or local fallback
+
+mongoose.connect(MONGODB_URI)
+    .then(() => console.log('MongoDB connected successfully'))
+    .catch(err => console.error('MongoDB connection error:', err));
+
+// --- Mongoose Schemas and Models ---
+
+// User Schema
+const UserSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true }
+});
+
+// Hash password before saving
+UserSchema.pre('save', async function (next) {
+    if (this.isModified('password')) {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+    }
+    next();
+});
+
+UserSchema.methods.comparePassword = function (candidatePassword) {
+    return bcrypt.compare(candidatePassword, this.password);
+};
+
+const User = mongoose.model('User', UserSchema);
+
+// Score Schema
+const ScoreSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    username: { type: String, required: true },
+    score: { type: Number, required: true },
+    total: { type: Number, required: true },
+    difficulty: { type: String, required: true }, // 'easy', 'medium', 'hard', 'daily'
+    date: { type: Date, default: Date.now }
+});
+
+const Score = mongoose.model('Score', ScoreSchema);
+
+// --- JWT Authentication Middleware ---
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token == null) return res.sendStatus(401); // No token
+
+    jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwtkey', (err, user) => {
+        if (err) return res.sendStatus(403); // Invalid token
+        req.user = user;
+        next();
+    });
+};
+
+// --- API Routes ---
+
+// Auth Routes
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = new User({ username, password });
+        await user.save();
+
+        const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET || 'supersecretjwtkey', { expiresIn: '1h' });
+        res.status(201).json({ success: true, user: { id: user._id, username: user.username, token } });
+    } catch (err) {
+        if (err.code === 11000) { // Duplicate key error (username already exists)
+            res.status(409).json({ success: false, message: 'Username already exists.' });
+        } else {
+            res.status(500).json({ success: false, message: 'Server error during registration.' });
+        }
+    }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
+
+        if (!user || !(await user.comparePassword(password))) {
+            return res.status(400).json({ success: false, message: 'Invalid username or password.' });
+        }
+
+        const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET || 'supersecretjwtkey', { expiresIn: '1h' });
+        res.json({ success: true, user: { id: user._id, username: user.username, token } });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error during login.' });
+    }
+});
+
+// Score Routes
+app.post('/api/scores', authenticateToken, async (req, res) => {
+    try {
+        const { score, total, difficulty } = req.body;
+        const newScore = new Score({
+            userId: req.user.id,
+            username: req.user.username,
+            score,
+            total,
+            difficulty
+        });
+        await newScore.save();
+        res.status(201).json({ success: true, message: 'Score saved successfully.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Error saving score.' });
+    }
+});
+
+// Get Leaderboard for a specific difficulty
+app.get('/api/scores/leaderboard/:difficulty', async (req, res) => {
+    try {
+        const { difficulty } = req.params;
+        const leaderboard = await Score.aggregate([
+            { $match: { difficulty: difficulty } },
+            {
+                $group: {
+                    _id: "$userId",
+                    username: { $first: "$username" },
+                    highestScore: { $max: "$score" },
+                    totalQuestions: { $first: "$total" } // Assuming total questions are consistent per quiz
+                }
+            },
+            { $sort: { highestScore: -1, username: 1 } }, // Sort by highest score, then username
+            { $project: { _id: 0, userId: "$_id", username: 1, score: "$highestScore", total: "$totalQuestions" } }
+        ]);
+        res.json({ success: true, leaderboard });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Error fetching leaderboard.' });
+    }
+});
+
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+// To run this backend:
+// 1. Save the above code as `server.js` in a new folder.
+// 2. Create a `.env` file in the same folder with:
+//    MONGODB_URI=your_mongodb_atlas_connection_string
+//    JWT_SECRET=a_very_strong_secret_key_for_jwt
+// 3. Run `npm install express mongoose bcryptjs jsonwebtoken dotenv cors`
+// 4. Run `node server.js`
+*/
